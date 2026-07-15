@@ -12,6 +12,7 @@ import { Tabs as JSTabs } from '../layouts/Tabs';
 import { Link, Redirect } from '../link/Link';
 import { type RenderRouterOptions, renderRouter, waitFor } from '../testing-library';
 import { TabList, TabSlot, TabTrigger, Tabs } from '../ui';
+import { useIsFocused } from '../useIsFocused';
 import type { PressableProps } from '../views/Pressable';
 import { Pressable } from '../views/Pressable';
 
@@ -310,7 +311,7 @@ it.skip('can dynamically remove the active tab', () => {
   expect(screen).toHaveSegments(['apple']);
 });
 
-it.skip('preserves surviving tab content when the trigger set changes', () => {
+it('preserves surviving tab content when the trigger set changes', () => {
   let appleMounts = 0;
 
   function Apple() {
@@ -344,7 +345,7 @@ it.skip('preserves surviving tab content when the trigger set changes', () => {
   expect(appleMounts).toBe(1);
 });
 
-it.skip('does not reset tab content when only a trigger href changes', () => {
+it('does not reset tab content when only a trigger href changes', () => {
   let appleMounts = 0;
 
   function Apple() {
@@ -376,7 +377,7 @@ it.skip('does not reset tab content when only a trigger href changes', () => {
   expect(appleMounts).toBe(1);
 });
 
-it.skip('does not reset tab content when triggers are reordered', () => {
+it('does not reset tab content when triggers are reordered', () => {
   let appleMounts = 0;
 
   function Apple() {
@@ -411,7 +412,7 @@ it.skip('does not reset tab content when triggers are reordered', () => {
   expect(appleMounts).toBe(1);
 });
 
-it.skip('keeps focus hooks correct after removing the active trigger', () => {
+it('keeps focus hooks correct after removing the active trigger', () => {
   function Apple() {
     return <Text testID="apple-focus">{useIsFocused() ? 'focused' : 'not focused'}</Text>;
   }
@@ -441,7 +442,7 @@ it.skip('keeps focus hooks correct after removing the active trigger', () => {
   expect(screen.getByTestId('apple-focus')).toHaveTextContent('focused');
 });
 
-it.skip('removes the active trigger from a nested dynamic tab navigator', () => {
+it('removes the active trigger from a nested dynamic tab navigator', () => {
   renderRouter(
     {
       _layout: () => (
