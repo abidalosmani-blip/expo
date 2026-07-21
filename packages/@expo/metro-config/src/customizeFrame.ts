@@ -47,6 +47,9 @@ export const INTERNAL_CALLSITES_REGEX = new RegExp(
     '@expo/metro-runtime/.+\\.ts',
     '@expo/server/.+\\.ts',
     'expo-server/.+\\.ts',
+    // Collapse expo internals in monorepo/linked layouts, where they resolve to packages/ not node_modules.
+    '(?:node_modules|packages)/expo/build/.+\\.js$',
+    '(?:node_modules|packages)/@expo/log-box/build/.+\\.js$',
     // Block upstream metro-runtime
     '/metro-runtime/.+\\.js$',
     // Expo's metro-runtime require patch:
@@ -55,7 +58,7 @@ export const INTERNAL_CALLSITES_REGEX = new RegExp(
     // Block all whatwg polyfills
     'node_modules/whatwg-.+\\.js$',
     // Hide expo-router warnings which are often wrapping all routes and imports.
-    'node_modules/expo-router/build/',
+    '(?:node_modules|packages)/expo-router/build/',
     // No Expo CLI logs
     '/@expo/cli/.+',
     // No context modules as these are virtual
@@ -148,6 +151,6 @@ export function getDefaultCustomizeFrame(): CustomizeFrameFunc {
       }
     }
 
-    return { ...(frame || {}), collapse };
+    return { ...frame, collapse };
   };
 }
