@@ -241,6 +241,240 @@ it('can dynamically add tabs', () => {
   expect(screen).toHaveSegments(['orange']);
 });
 
+it('throws when tab triggers change', () => {
+  renderRouter(
+    {
+      _layout: function TabLayout() {
+        const [showAll, setShowAll] = useState(false);
+
+        const tabs = showAll ? (
+          <>
+            <TabTrigger name="apple" href="/apple" />
+            <TabTrigger name="orange" href="/orange" />
+          </>
+        ) : (
+          <TabTrigger name="apple" href="/apple" />
+        );
+
+        return (
+          <Tabs>
+            <TabList>{tabs}</TabList>
+            <TabSlot />
+            <Button testID="show-all" title="Show all" onPress={() => setShowAll(true)} />
+          </Tabs>
+        );
+      },
+      apple: () => null,
+      orange: () => null,
+    },
+    {
+      initialUrl: '/apple',
+    }
+  );
+
+  expect(screen).toHaveSegments(['apple']);
+  expect(() => fireEvent.press(screen.getByTestId('show-all'))).toThrow(
+    'Tab triggers cannot be changed after the navigator has mounted.'
+  );
+});
+
+it.skip('can dynamically remove the active tab', () => {
+  renderRouter(
+    {
+      _layout: function TabLayout() {
+        const [showAll, setShowAll] = useState(true);
+
+        return (
+          <Tabs>
+            <TabList>
+              <TabTrigger name="apple" href="/apple" />
+              {showAll && <TabTrigger name="orange" href="/orange" />}
+            </TabList>
+            <TabSlot />
+            <Button testID="hide-orange" title="Hide orange" onPress={() => setShowAll(false)} />
+          </Tabs>
+        );
+      },
+      apple: () => null,
+      orange: () => null,
+    },
+    {
+      initialUrl: '/orange',
+    }
+  );
+
+  expect(screen).toHaveSegments(['orange']);
+
+  fireEvent.press(screen.getByTestId('hide-orange'));
+
+  expect(screen).toHaveSegments(['apple']);
+});
+
+it.skip('preserves surviving tab content when the trigger set changes', () => {
+  let appleMounts = 0;
+
+  function Apple() {
+    useState(() => appleMounts++);
+    return null;
+  }
+
+  renderRouter(
+    {
+      _layout: function TabLayout() {
+        const [showOrange, setShowOrange] = useState(true);
+        return (
+          <Tabs>
+            <TabList>
+              <TabTrigger name="apple" href="/apple" />
+              {showOrange && <TabTrigger name="orange" href="/orange" />}
+            </TabList>
+            <TabSlot />
+            <Button testID="hide-orange" title="Hide orange" onPress={() => setShowOrange(false)} />
+          </Tabs>
+        );
+      },
+      apple: Apple,
+      orange: () => null,
+    },
+    { initialUrl: '/apple' }
+  );
+
+  expect(appleMounts).toBe(1);
+  fireEvent.press(screen.getByTestId('hide-orange'));
+  expect(appleMounts).toBe(1);
+});
+
+it.skip('does not reset tab content when only a trigger href changes', () => {
+  let appleMounts = 0;
+
+  function Apple() {
+    useState(() => appleMounts++);
+    return null;
+  }
+
+  renderRouter(
+    {
+      _layout: function TabLayout() {
+        const [withQuery, setWithQuery] = useState(false);
+        return (
+          <Tabs>
+            <TabList>
+              <TabTrigger name="apple" href={withQuery ? '/apple?updated=true' : '/apple'} />
+            </TabList>
+            <TabSlot />
+            <Button testID="change-href" title="Change href" onPress={() => setWithQuery(true)} />
+          </Tabs>
+        );
+      },
+      apple: Apple,
+    },
+    { initialUrl: '/apple' }
+  );
+
+  expect(appleMounts).toBe(1);
+  fireEvent.press(screen.getByTestId('change-href'));
+  expect(appleMounts).toBe(1);
+});
+
+it.skip('does not reset tab content when triggers are reordered', () => {
+  let appleMounts = 0;
+
+  function Apple() {
+    useState(() => appleMounts++);
+    return null;
+  }
+
+  renderRouter(
+    {
+      _layout: function TabLayout() {
+        const [reversed, setReversed] = useState(false);
+        const triggers = [
+          <TabTrigger key="apple" name="apple" href="/apple" />,
+          <TabTrigger key="orange" name="orange" href="/orange" />,
+        ];
+        return (
+          <Tabs>
+            <TabList>{reversed ? triggers.reverse() : triggers}</TabList>
+            <TabSlot />
+            <Button testID="reorder" title="Reorder" onPress={() => setReversed(true)} />
+          </Tabs>
+        );
+      },
+      apple: Apple,
+      orange: () => null,
+    },
+    { initialUrl: '/apple' }
+  );
+
+  expect(appleMounts).toBe(1);
+  fireEvent.press(screen.getByTestId('reorder'));
+  expect(appleMounts).toBe(1);
+});
+
+it.skip('keeps focus hooks correct after removing the active trigger', () => {
+  function Apple() {
+    return <Text testID="apple-focus">{useIsFocused() ? 'focused' : 'not focused'}</Text>;
+  }
+
+  renderRouter(
+    {
+      _layout: function TabLayout() {
+        const [showOrange, setShowOrange] = useState(true);
+        return (
+          <Tabs>
+            <TabList>
+              <TabTrigger name="apple" href="/apple" />
+              {showOrange && <TabTrigger name="orange" href="/orange" />}
+            </TabList>
+            <TabSlot />
+            <Button testID="hide-orange" title="Hide orange" onPress={() => setShowOrange(false)} />
+          </Tabs>
+        );
+      },
+      apple: Apple,
+      orange: () => null,
+    },
+    { initialUrl: '/orange' }
+  );
+
+  fireEvent.press(screen.getByTestId('hide-orange'));
+  expect(screen.getByTestId('apple-focus')).toHaveTextContent('focused');
+});
+
+it.skip('removes the active trigger from a nested dynamic tab navigator', () => {
+  renderRouter(
+    {
+      _layout: () => (
+        <Tabs>
+          <TabList>
+            <TabTrigger name="fruit" href="/fruit" />
+          </TabList>
+          <TabSlot />
+        </Tabs>
+      ),
+      'fruit/_layout': function FruitTabs() {
+        const [showOrange, setShowOrange] = useState(true);
+        return (
+          <Tabs>
+            <TabList>
+              <TabTrigger name="apple" href="/fruit/apple" />
+              {showOrange && <TabTrigger name="orange" href="/fruit/orange" />}
+            </TabList>
+            <TabSlot />
+            <Button testID="hide-orange" title="Hide orange" onPress={() => setShowOrange(false)} />
+          </Tabs>
+        );
+      },
+      'fruit/apple': () => null,
+      'fruit/orange': () => null,
+    },
+    { initialUrl: '/fruit/orange' }
+  );
+
+  fireEvent.press(screen.getByTestId('hide-orange'));
+  expect(screen).toHaveSegments(['fruit', 'apple']);
+});
+
 it('does works with shared groups', () => {
   renderRouter(
     {
@@ -385,7 +619,7 @@ describe('warnings/errors', () => {
   });
 });
 
-it('can update href dynamically', () => {
+it('throws when a tab trigger href changes', () => {
   const MockContext = React.createContext({ href: '/a', setHref: (href: string) => {} });
   renderRouter({
     _layout: function TabLayout() {
@@ -424,27 +658,9 @@ it('can update href dynamically', () => {
     },
   });
   expect(screen.getByTestId('index')).toBeVisible();
-  expect(screen.queryByTestId('page')).toBeNull();
-  expect(screen.getByText('/a')).toBeVisible();
-  expect(screen.getByText('Index')).toBeVisible();
-
-  fireEvent.press(screen.getByText('/a'));
-  expect(screen.queryByTestId('index')).toBeNull();
-  expect(screen.getByTestId('page')).toBeVisible();
-  expect(screen.getByTestId('page')).toHaveTextContent('a');
-  expect(screen.getByText('Index')).toBeVisible();
-
-  fireEvent.press(screen.getByText('Index'));
-  expect(screen.getByTestId('index')).toBeVisible();
-  expect(screen.queryByTestId('page')).toBeNull();
-
-  fireEvent.press(screen.getByTestId('toggle'));
-  expect(screen.getByText('/b')).toBeVisible();
-  expect(screen.queryByText('/a')).toBeNull();
-
-  fireEvent.press(screen.getByText('/b'));
-  expect(screen.getByTestId('page')).toBeVisible();
-  expect(screen.getByTestId('page')).toHaveTextContent('b');
+  expect(() => fireEvent.press(screen.getByTestId('toggle'))).toThrow(
+    'Tab triggers cannot be changed after the navigator has mounted.'
+  );
 });
 
 it('does not reset on focus when resetOnFocus is false', () => {

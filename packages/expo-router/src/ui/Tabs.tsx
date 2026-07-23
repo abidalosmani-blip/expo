@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactElement, ReactNode, PropsWithChildren } from 'react';
-import { Children, Fragment, isValidElement, use, useMemo } from 'react';
+import { Children, Fragment, isValidElement, use, useMemo, useRef } from 'react';
 import type { ViewProps } from 'react-native';
 import { StyleSheet, View } from 'react-native';
 
@@ -140,6 +140,14 @@ export function useTabsWithChildren(options: UseTabsWithChildrenOptions) {
  */
 export function useTabsWithTriggers(options: UseTabsWithTriggersOptions): TabsContextValue {
   const { triggers, ...rest } = options;
+  const triggerKey = JSON.stringify(
+    triggers.map((trigger) => [trigger.type, trigger.name, resolveHref(trigger.href)])
+  );
+  const initialTriggerKey = useRef(triggerKey);
+  // TODO(@ubax): Support dynamic triggers without relying on route-name reconciliation.
+  if (initialTriggerKey.current !== triggerKey) {
+    throw new Error('Tab triggers cannot be changed after the navigator has mounted.');
+  }
   // Ensure we extend the parent triggers, so we can trigger them as well
   const parentTriggerMap = use(TabTriggerMapContext);
   const routeNode = useRouteNode();
